@@ -3,7 +3,6 @@
 void UFileIOBPLib::WriteStringToFile(FString Path, FString resultString, bool Relative) { 
 #if WITH_EDITOR 
 	FFileHelper::SaveStringToFile(resultString, Relative ? *(FPaths::ProjectDir() + Path) : *Path);
-	
 #else
 	const FString AbsoluteRootPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	const FString AbsolutePath = AbsoluteRootPath + TEXT("Mods/") + Path;
@@ -14,7 +13,7 @@ void UFileIOBPLib::WriteStringToFile(FString Path, FString resultString, bool Re
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("Absolute or escaping Paths are not allowed in Runtime"));
-}
+	}
 #endif
 }
 
@@ -30,8 +29,8 @@ bool UFileIOBPLib::LoadStringFromFile(FString& String, FString Path, bool Relati
 	}
 	else
 	{
-		return false;
 		UE_LOG(LogTemp, Error, TEXT("Absolute or escaping Paths are not allowed in Runtime"));
+		return false;
 	}
 #endif
 }

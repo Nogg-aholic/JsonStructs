@@ -151,13 +151,13 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 	else if (FEnumProperty* EProp = CastField<FEnumProperty>(Prop)) {	
 		if (json->Type == EJson::Object)
 		{
-			if (json->AsObject()->HasField("JS_Enum") && json->AsObject()->HasField("JS_Value"))
+			if (json->AsObject()->HasField(TEXT("JS_Enum")) && json->AsObject()->HasField(TEXT("JS_Value")))
 			{
-				const FString KeyValue = json->AsObject()->TryGetField("JS_Enum")->AsString();
+				const FString KeyValue = json->AsObject()->TryGetField(TEXT("JS_Enum"))->AsString();
 				if (FPackageName::IsValidObjectPath(*KeyValue)) {
 					UEnum* EnumClass = LoadObject<UEnum>(nullptr, *KeyValue);
 					if (EnumClass) {
-						FString Value = *json->AsObject()->TryGetField("JS_Value")->AsString();
+						FString Value = *json->AsObject()->TryGetField(TEXT("JS_Value"))->AsString();
 						FNumericProperty* NumProp = CastField<FNumericProperty>(EProp->GetUnderlyingProperty());
 						int32 intValue = EnumClass->GetIndexByName(FName(Value),EGetByNameFlags::CheckAuthoredName);
 						FString StringInt = FString::FromInt(intValue);
@@ -175,13 +175,13 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 		
 		if (ByteProp->IsEnum()) {
 			if (json->Type == EJson::Object) {
-				if (json->AsObject()->HasField("JS_EnumAsByte") && json->AsObject()->HasField("JS_Value")) {
-					const TSharedPtr<FJsonValue> KeyValue = json->AsObject()->TryGetField("JS_EnumAsByte");
+				if (json->AsObject()->HasField(TEXT("JS_EnumAsByte")) && json->AsObject()->HasField(TEXT("JS_Value"))) {
+					const TSharedPtr<FJsonValue> KeyValue = json->AsObject()->TryGetField(TEXT("JS_EnumAsByte"));
 					if (FPackageName::IsValidObjectPath(*KeyValue->AsString())) {
 						UEnum* EnumClass = LoadObject<UEnum>(nullptr, *KeyValue->AsString());
 						if (EnumClass) {
-							const TSharedPtr<FJsonValue> ValueObject = json->AsObject()->TryGetField("JS_Value");
-							const TSharedPtr<FJsonValue> Byte = json->AsObject()->TryGetField("JS_Byte");
+							const TSharedPtr<FJsonValue> ValueObject = json->AsObject()->TryGetField(TEXT("JS_Value"));
+							const TSharedPtr<FJsonValue> Byte = json->AsObject()->TryGetField(TEXT("JS_Byte"));
 							auto ByteValue = ByteProp->GetPropertyValue(Ptr);
 							uint8 NewValue = Byte->AsNumber();
 							if (NewValue != ByteValue)
@@ -228,18 +228,18 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 	else if (FArrayProperty* AProp = CastField<FArrayProperty>(Prop)) {
 		if (json->Type == EJson::Object)
 		{
-			if (json->AsObject()->HasField("JS_Values"))
+			if (json->AsObject()->HasField(TEXT("JS_Values")))
 			{
-				const TArray< TSharedPtr<FJsonValue> > Values = json->AsObject()->TryGetField("JS_Values")->AsArray();
+				const TArray< TSharedPtr<FJsonValue> > Values = json->AsObject()->TryGetField(TEXT("JS_Values"))->AsArray();
 				bool Replace = false; bool Remove = false; bool Unique = false; 
-				if (json->AsObject()->HasField("JS_Replace"))
-					Replace = json->AsObject()->TryGetField("JS_Replace")->AsBool();
+				if (json->AsObject()->HasField(TEXT("JS_Replace")))
+					Replace = json->AsObject()->TryGetField(TEXT("JS_Replace"))->AsBool();
 				
-				if (json->AsObject()->HasField("JS_Remove"))
-					Remove = json->AsObject()->TryGetField("JS_Remove")->AsBool();
+				if (json->AsObject()->HasField(TEXT("JS_Remove")))
+					Remove = json->AsObject()->TryGetField(TEXT("JS_Remove"))->AsBool();
 				
-				if (json->AsObject()->HasField("JS_UniqueElements"))
-					Unique = json->AsObject()->TryGetField("JS_UniqueElements")->AsBool();
+				if (json->AsObject()->HasField(TEXT("JS_UniqueElements")))
+					Unique = json->AsObject()->TryGetField(TEXT("JS_UniqueElements"))->AsBool();
 				
 				FScriptArrayHelper Helper(AProp, Ptr);
 				// in order to compare values we want to keep values when overwriting children 
@@ -372,7 +372,7 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 			for (int i = 0; i < jsonArr.Num(); i++) {
 				void* PropertyValue = FMemory::Malloc(MProp->KeyProp->GetSize());
 				MProp->KeyProp->InitializeValue(PropertyValue);
-				TSharedPtr<FJsonValue> KeyValue = jsonArr[i]->AsObject()->TryGetField("JS_Key");
+				TSharedPtr<FJsonValue> KeyValue = jsonArr[i]->AsObject()->TryGetField(TEXT("JS_Key"));
 				Conv_JsonValueToFProperty(KeyValue, MProp->KeyProp, PropertyValue, Outer, false);
 				const uint32 Hash = MProp->KeyProp->GetValueTypeHash(PropertyValue); 
 				if (!MapHashes.Contains(Hash))
@@ -382,7 +382,7 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 				else
 				{
 					uint8* ValuePtr = MapHelper.GetValuePtr(MapHashes.Find(Hash));
-					TSharedPtr<FJsonValue> ObjectValue = jsonArr[i]->AsObject()->TryGetField("JS_Value");
+					TSharedPtr<FJsonValue> ObjectValue = jsonArr[i]->AsObject()->TryGetField(TEXT("JS_Value"));
 					Conv_JsonValueToFProperty(ObjectValue, MProp->ValueProp, ValuePtr, Outer);
 
 				}
@@ -394,8 +394,8 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 			{
 				const int32 Index = MapHelper.AddDefaultValue_Invalid_NeedsRehash();
 				uint8* mapPtr = MapHelper.GetPairPtr(Index);
-				TSharedPtr<FJsonValue> ObjectValue = jsonArr[i]->AsObject()->TryGetField("JS_Value");
-				TSharedPtr<FJsonValue> KeyValue = jsonArr[i]->AsObject()->TryGetField("JS_Key");
+				TSharedPtr<FJsonValue> ObjectValue = jsonArr[i]->AsObject()->TryGetField(TEXT("JS_Value"));
+				TSharedPtr<FJsonValue> KeyValue = jsonArr[i]->AsObject()->TryGetField(TEXT("JS_Key"));
 				Conv_JsonValueToFProperty(KeyValue, MProp->KeyProp, mapPtr, Outer);
 				Conv_JsonValueToFProperty(ObjectValue, MProp->ValueProp, mapPtr + MapHelper.MapLayout.ValueOffset, Outer);
 			}
@@ -440,11 +440,11 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 	else if (FObjectProperty* UProp = CastField<FObjectProperty>(Prop)) {
 	
 		if (json->Type == EJson::Object) {
-			if (json->AsObject()->HasField("JS_Object") && json->AsObject()->HasField("JS_Class") && json->AsObject()->HasField("JS_ObjectFlags") && json->AsObject()->HasField("JS_ObjectName")) {
-				const FString KeyValue = json->AsObject()->TryGetField("JS_Class")->AsString();
-				const FString NameValue = json->AsObject()->TryGetField("JS_ObjectName")->AsString();
-				const TSharedPtr<FJsonValue> ObjectValue = json->AsObject()->TryGetField("JS_Object");
-				const TSharedPtr<FJsonValue> OuterValue = json->AsObject()->TryGetField("JS_ObjectOuter");
+			if (json->AsObject()->HasField(TEXT("JS_Object")) && json->AsObject()->HasField(TEXT("JS_Class")) && json->AsObject()->HasField(TEXT("JS_ObjectFlags")) && json->AsObject()->HasField(TEXT("JS_ObjectName"))) {
+				const FString KeyValue = json->AsObject()->TryGetField(TEXT("JS_Class"))->AsString();
+				const FString NameValue = json->AsObject()->TryGetField(TEXT("JS_ObjectName"))->AsString();
+				const TSharedPtr<FJsonValue> ObjectValue = json->AsObject()->TryGetField(TEXT("JS_Object"));
+				const TSharedPtr<FJsonValue> OuterValue = json->AsObject()->TryGetField(TEXT("JS_ObjectOuter"));
 				const EObjectFlags ObjectLoadFlags = static_cast<EObjectFlags>(json->AsObject()->GetIntegerField((TEXT("JS_ObjectFlags"))));
 				if (ObjectValue->Type == EJson::Object && KeyValue != "") {
 					UClass* InnerBPClass = LoadObject<UClass>(nullptr, *KeyValue);
@@ -623,7 +623,7 @@ TSharedPtr<FJsonValue> UJsonStructBPLib::Conv_FPropertyToJsonValue(FProperty* Pr
 		auto& arr = AProp->GetPropertyValue(Ptr);
 		TArray<TSharedPtr<FJsonValue>> jsonArr;
 		for (int i = 0; i < arr.Num(); i++) {
-			jsonArr.Add(Conv_FPropertyToJsonValue(AProp->Inner, (void*)((size_t)arr.GetData() + i * AProp->Inner->ElementSize), IncludeObjects, RecursionArray, DeepRecursion, FilteredFields,Exclude));
+			jsonArr.Add(Conv_FPropertyToJsonValue(AProp->Inner, (void*)((size_t)arr.GetData() + i * AProp->GetElementSize()), IncludeObjects, RecursionArray, DeepRecursion, FilteredFields,Exclude));
 		}
 		JsonObject->SetField("JS_Values",  MakeShared<FJsonValueArray>(jsonArr));
 		return TSharedPtr<FJsonValue>(MakeShared<FJsonValueObject>(JsonObject)) ;
@@ -1138,10 +1138,10 @@ bool  UJsonStructBPLib::SetClassDefaultsFromJsonString(const FString JsonString,
 	if (!Result.IsValid())
 		return false;
 
-	if (Result->HasField("JS_LibClass") && Result->HasField("JS_LibValue"))
+	if (Result->HasField(TEXT("JS_LibClass")) && Result->HasField(TEXT("JS_LibValue")))
 	{
-		const FString String = Result->GetStringField("JS_LibClass");
-		const TSharedPtr<FJsonObject> Obj = Result->GetObjectField("JS_LibValue");
+		const FString String = Result->GetStringField(TEXT("JS_LibClass"));
+		const TSharedPtr<FJsonObject> Obj = Result->GetObjectField(TEXT("JS_LibValue"));
 		Result = Obj;
 		if (FPackageName::IsValidObjectPath(String))
 		{

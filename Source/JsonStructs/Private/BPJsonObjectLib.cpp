@@ -328,7 +328,7 @@ void UBPJsonObjectLib::AddField(FBPJsonObject& Object, const FString Name, FBPJs
 		}
 		else
 		{
-			const TSharedPtr<FJsonValue> Val = FieldValue.InnerObj->TryGetField("Lib_ValueObject");
+			const TSharedPtr<FJsonValue> Val = FieldValue.InnerObj->TryGetField(TEXT("Lib_ValueObject"));
 			if(Val.IsValid())
 				Object.InnerObj->Values.Add(Name,Val);
 		}
