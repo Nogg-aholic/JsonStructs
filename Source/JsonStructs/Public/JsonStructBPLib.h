@@ -8,7 +8,7 @@
 #include "Serialization/ObjectReader.h" 
 #include "JsonStructBPLib.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(JsonStructs_Log, Log, Log);
+DECLARE_LOG_CATEGORY_EXTERN(JsonStructs_Log, Verbose, All);
 
 
 /**

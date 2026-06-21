@@ -9,6 +9,7 @@
 
 DEFINE_LOG_CATEGORY(JsonStructs_Log);
 
+//UE_DISABLE_OPTIMIZATION_SHIP
 
 void UJsonStructBPLib::Log(FString LogString, int32 Level)
 {
@@ -58,6 +59,7 @@ UClass* UJsonStructBPLib::FindClassByName(const FString ClassNameInput) {
 }
 
 TSharedPtr<FJsonObject> UJsonStructBPLib::Conv_UStructToJsonObject(const UStruct* Struct, void* Ptr, bool IncludeObjects, TArray<UObject*>& RecursionArray,bool IncludeNonInstanced, TArray<FString> FilteredFields, bool Exclude= true) {
+	// UE_LOG(JsonStructs_Log, Warning, TEXT("Conv_UStructToJsonObject Processing UStruct with name %s"), *Struct->GetName());
 	auto Obj = MakeShared<FJsonObject>();
 	for (auto prop = TFieldIterator<FProperty>(Struct); prop; ++prop) {
 		if (FilteredFields.Contains(prop->GetName()))
@@ -70,6 +72,7 @@ TSharedPtr<FJsonObject> UJsonStructBPLib::Conv_UStructToJsonObject(const UStruct
 			if (!Exclude)
 				continue;
 		}
+		// UE_LOG(JsonStructs_Log, Warning, TEXT("Conv_UStructToJsonObject converting field on %s with name %s and type %s"), *Struct->GetName() , *prop->GetName(), *prop->GetCPPType());
 		TSharedPtr<FJsonValue> value = Conv_FPropertyToJsonValue(*prop, prop->ContainerPtrToValuePtr<void>(Ptr), IncludeObjects, RecursionArray, IncludeNonInstanced, FilteredFields, Exclude);
 		if (value.IsValid() && value->Type != EJson::Null)
 		{
@@ -561,8 +564,19 @@ void UJsonStructBPLib::Conv_JsonValueToFProperty(TSharedPtr<FJsonValue> json, FP
 	}
 }
 
-
 TSharedPtr<FJsonValue> UJsonStructBPLib::Conv_FPropertyToJsonValue(FProperty* Prop, void* Ptr,bool IncludeObjects ,TArray<UObject*>& RecursionArray,bool DeepRecursion, TArray<FString> FilteredFields, bool Exclude) {
+	if (!Prop) {
+		Log("Asked to convert NULL FProperty to JSON", 2);
+		return MakeShared<FJsonValueNull>();
+	}
+	const auto debugName = Prop->GetNameCPP();
+	// UE_LOG(JsonStructs_Log, Warning, TEXT("Conv_FPropertyToJsonValue Processing FProperty with name %s and type %s"), *debugName, *Prop->GetCPPType());
+
+	if (debugName.Equals(TEXT("mUnlocks"))) {
+		UE_LOG(JsonStructs_Log, Warning, TEXT("Exiting early because property name is %s"), *debugName)
+		return MakeShared<FJsonValueString>("JS - Skipped converting this value to avoid a crash https://github.com/Nogg-aholic/ContentInspector/issues/1");
+	}
+
 	if (FStrProperty* StrProp = CastField<FStrProperty>(Prop)) {
 		return MakeShared<FJsonValueString>(StrProp->GetPropertyValue(Ptr));
 	}
@@ -623,6 +637,7 @@ TSharedPtr<FJsonValue> UJsonStructBPLib::Conv_FPropertyToJsonValue(FProperty* Pr
 		auto& arr = AProp->GetPropertyValue(Ptr);
 		TArray<TSharedPtr<FJsonValue>> jsonArr;
 		for (int i = 0; i < arr.Num(); i++) {
+			// UE_LOG(JsonStructs_Log, Warning, TEXT("Conv_FPropertyToJsonValue Processing array element index %d of %d"), i, arr.Num() - 1);
 			jsonArr.Add(Conv_FPropertyToJsonValue(AProp->Inner, (void*)((size_t)arr.GetData() + i * AProp->GetElementSize()), IncludeObjects, RecursionArray, DeepRecursion, FilteredFields,Exclude));
 		}
 		JsonObject->SetField("JS_Values",  MakeShared<FJsonValueArray>(jsonArr));
@@ -651,9 +666,9 @@ TSharedPtr<FJsonValue> UJsonStructBPLib::Conv_FPropertyToJsonValue(FProperty* Pr
 		return MakeShared<FJsonValueArray>(JSONArr);
 	}
 	else if (FClassProperty* CProp = CastField<FClassProperty>(Prop)) {
-		if (CProp->GetPropertyValue(Ptr))
+		if (auto& ptr = CProp->GetPropertyValue(Ptr))
 		{
-			return MakeShared<FJsonValueString>(CProp->GetPropertyValue(Ptr)->GetPathName());
+			return MakeShared<FJsonValueString>(ptr->GetPathName());
 		}
 		else
 		{
@@ -795,7 +810,7 @@ TSharedPtr<FJsonValue> UJsonStructBPLib::Conv_FPropertyToJsonValue(FProperty* Pr
 	}
 	else
 	{
-		// Log Debug
+		UE_LOG(JsonStructs_Log, Warning, TEXT("No implementation for converting FProperty to JSON for property with name %s and type %s, returning FJsonValueNull instead"), *debugName, *Prop->GetCPPType());
 	}
 	return MakeShared<FJsonValueNull>();
 
@@ -1236,3 +1251,4 @@ void UJsonStructBPLib::Conv_UClassToPropertyFieldNames(UStruct* Structure, TArra
 	}
 }
 
+//UE_ENABLE_OPTIMIZATION_SHIP
